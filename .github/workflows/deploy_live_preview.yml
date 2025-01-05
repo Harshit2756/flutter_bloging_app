@@ -1,0 +1,136 @@
+# name: Flutter Web Preview Build
+
+# # PREREQUISITES:
+# # 1. Create a new branch named 'live_preview'
+# # 2. Configure GitHub Pages:
+# #    - Go to Repository Settings > Pages
+# #    - Select 'live_preview' branch as source
+# #    - Set '/docs' as the publishing directory
+
+# # WORKFLOW SETUP:
+# # 1. Create this file at: .github/workflows/deploy_live_preview.yml
+# # 2. Configure environment secrets:
+# #    - Navigate to: Repository Settings > Secrets and Variables > Actions
+# #    - Add New Repository Secrets:
+# #      * SUPERBASE_KEY: Your API key value
+# #      * SUPERBASE_URL: Your context key value
+
+# # ACCESSING SECRETS:
+# # - In GitHub Actions: ${{ secrets.SECRET_NAME }}
+# # - In Windows CMD: %SECRET_NAME%
+# # - In PowerShell: $env:SECRET_NAME
+
+# on:
+#   pull_request:
+#     branches: [main, master]
+#   push:
+#     branches: [main, master]
+# permissions:
+#   contents: write
+
+# jobs:
+#   build:
+#     runs-on: ubuntu-latest
+#     env:
+#       SUPERBASE_KEY: ${{ secrets.SUPERBASE_KEY }}
+#       SUPERBASE_URL: ${{ secrets.SUPERBASE_URL }}
+
+#     steps:
+#       - uses: actions/checkout@v4
+#         with:
+#           token: ${{ secrets.GITHUB_TOKEN }}
+#           fetch-depth: 0
+
+#       - name: Reset live_preview branch to default branch
+#         run: |
+#           # Detect default branch (main or master)
+#           DEFAULT_BRANCH=$(git remote show origin | grep 'HEAD branch' | cut -d' ' -f5)
+#           echo "Default branch is: $DEFAULT_BRANCH"
+
+#           # Reset live_preview to detected default branch
+#           git checkout live_preview 2>/dev/null || git checkout -b live_preview
+#           git fetch origin $DEFAULT_BRANCH
+#           git reset --hard origin/$DEFAULT_BRANCH
+#           git push -f origin live_preview
+
+#       - name: Set up Flutter
+#         uses: subosito/flutter-action@v2
+#         with:
+#           flutter-version: "3.24.4" #. Specify the Flutter version
+#           channel: "stable"
+
+#       - name: Install dependencies
+#         run: |
+#           flutter pub get
+#           flutter pub add device_preview
+#           flutter pub add device_preview_screenshot
+#           flutter pub get
+
+#       - name: Update main.dart for preview
+#         run: |
+#           # Ensure we're creating a fresh main.dart
+#           cat > lib/main.dart << 'EOL' #. Replace with your main.dart content
+#           import 'package:attendance_app/shared/routes/routes_name.dart';
+#           import 'package:flutter/material.dart';
+#           import 'package:flutter/services.dart';
+#           import 'package:get/get.dart';
+#           import 'package:device_preview/device_preview.dart';
+
+#           import 'shared/routes/app_routes.dart';
+#           import 'shared/utils/theme/colors.dart';
+#           import 'shared/utils/theme/theme.dart';
+
+#           void main() async {
+#             SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+#               systemNavigationBarColor: HColors.primary,
+#               systemNavigationBarIconBrightness: Brightness.dark,
+#             ));
+
+#             runApp(
+#               DevicePreview(
+#                 enabled: true,
+#                 builder: (context) => const App(),
+#               ),
+#             );
+#           }
+
+#           class App extends StatelessWidget {
+#             const App({super.key});
+
+#             @override
+#             Widget build(BuildContext context) {
+#               return GetMaterialApp(
+#                 title: 'Attendance App',
+#                 debugShowCheckedModeBanner: false,
+#                 themeMode: ThemeMode.light,
+#                 theme: HAppTheme.lightTheme,
+#                 locale: DevicePreview.locale(context),
+#                 builder: DevicePreview.appBuilder,
+#                 initialRoute: HRoutesName.splash,
+#                 getPages: HAppRoutes.routes,
+#                 defaultTransition: Transition.fade,
+#               );
+#             }
+#           }
+#           EOL
+
+#       - name: Build Web
+#         run: flutter build web --base-href "/flutter_chess/" #. Specify the base href
+
+#       - name: Update docs directory
+#         run: |
+#           # Remove old docs and create new one
+#           rm -rf docs
+#           mkdir -p docs
+#           # Copy web build to docs
+#           cp -r build/web/. docs/
+
+#       - name: Commit and push preview changes
+#         run: |
+#           git config --global user.name 'github-actions[bot]'
+#           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+#           # Stage all changes
+#           git add docs lib/main.dart
+#           git commit -m "Update web preview build" || echo "No changes to commit"
+#           # Force push to ensure clean state
+#           git push -f origin live_preview
