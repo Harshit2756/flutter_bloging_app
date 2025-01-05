@@ -18,11 +18,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   AuthBloc({
     required UserSignUp userSignUp,
-    required UserSignIn userSignIn,
+    required UserSignIn userLogIn,
     required CurrentUser currentUser,
     required AppUserCubit appUserCubit,
   })  : _userSignUp = userSignUp,
-        _userSignIn = userSignIn,
+        _userSignIn = userLogIn,
         _currentUser = currentUser,
         _appUserCubit = appUserCubit,
         super(AuthInitial()) {

@@ -2,9 +2,12 @@ import 'package:bloging_app/core/errors/exceptions.dart';
 import 'package:fpdart/fpdart.dart';
 
 import '../../../../core/common/entities/user.dart';
+import '../../../../core/constants/constants.dart';
 import '../../../../core/errors/failures.dart';
+import '../../../../core/network/connection_checker.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_remote_data_source.dart';
+import '../models/user_model.dart';
 
 /// [AuthRepositoryImpl] is a concrete class that implements the abstract class AuthRepository.
 /// This class uses the AuthRemoteDataSource class to perform authentication operations based on the AuthRepository class.
@@ -12,30 +15,30 @@ import '../datasources/auth_remote_data_source.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource remoteDataSource;
-  // final ConnectionChecker connectionChecker;
+  final ConnectionChecker connectionChecker;
   const AuthRepositoryImpl(
     this.remoteDataSource,
-    // this.connectionChecker,
+    this.connectionChecker,
   );
 
   @override
   Future<Either<Failure, User>> currentUser() async {
     try {
-      // if (!await (connectionChecker.isConnected)) {
-      //   final session = remoteDataSource.currentUserSession;
+      if (!await (connectionChecker.isConnected)) {
+        final session = remoteDataSource.currentUserSession;
 
-      //   if (session == null) {
-      //     return left(Failure('User not logged in!'));
-      //   }
+        if (session == null) {
+          return left(Failure('User not logged in!'));
+        }
 
-      //   return right(
-      //     UserModel(
-      //       id: session.user.id,
-      //       email: session.user.email ?? '',
-      //       name: '',
-      //     ),
-      //   );
-      // }
+        return right(
+          UserModel(
+            id: session.user.id,
+            email: session.user.email ?? '',
+            name: '',
+          ),
+        );
+      }
       final user = await remoteDataSource.getCurrentUser();
       if (user == null) {
         return left(Failure('User not logged in!'));
@@ -97,9 +100,9 @@ class AuthRepositoryImpl implements AuthRepository {
     Future<User> Function() fn,
   ) async {
     try {
-      // if (!await (connectionChecker.isConnected)) {
-      //   return left(Failure(Constants.noConnectionErrorMessage));
-      // }
+      if (!await (connectionChecker.isConnected)) {
+        return left(Failure(Constants.noConnectionErrorMessage));
+      }
       final user = await fn();
       print('User: $user');
       return right(user);

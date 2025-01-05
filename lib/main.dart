@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/common/cubits/app_user/app_user_cubit.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/auth/presentation/pages/login_page.dart';
+import 'features/blog/presentation/bloc/blog_bloc.dart';
 import 'features/blog/presentation/pages/blog_page.dart';
 
 void main() async {
@@ -20,6 +21,10 @@ void main() async {
       BlocProvider(
         create: (context) => getIt<AuthBloc>(),
       ),
+      BlocProvider(
+        create: (context) => getIt<BlogBloc>(),
+      ),
+      
     ],
     child: MainApp(),
   ));
